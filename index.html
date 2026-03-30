@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UPI Shield – AI Fraud Detection System</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+  <canvas id="particles"></canvas>
+  <div id="atk-overlay"></div>
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <div class="nav-logo">
+      <div class="nav-hex"></div>UPI SHIELD
+    </div>
+    <div class="nav-links">
+      <a href="#db-section" class="active" onclick="smoothTo('db-section',this)">Dashboard</a>
+      <a href="#analytics-section" onclick="smoothTo('analytics-section',this)">Analytics</a>
+      <a href="#cases-section" onclick="smoothTo('cases-section',this)">Case Queue</a>
+      <a href="#agent-section" onclick="smoothTo('agent-section',this)">AI Agent</a>
+    </div>
+    <div class="nav-right">
+      <div class="nav-status"><span class="live-dot"></span>LIVE MONITORING</div>
+      <button class="nav-mode-btn" onclick="toggleAttack()">⚡ SIMULATE ATTACK</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <div class="hero-badge"><span class="live-dot"></span>ADAPTIVE AI · MODEL v3.2 · 99.7% ACCURACY</div>
+      <h1 class="hero-title">Real-Time AI Protection<br>for UPI Payments</h1>
+      <p class="hero-sub">Military-grade fraud detection with sub-50ms response. Guarding billions of transactions with
+        neural pattern recognition and graph intelligence.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="hero-stat-val" data-count="99.7">0</span>%<span
+            class="hero-stat-lbl">Detection Rate</span></div>
+        <div class="hero-stat"><span class="hero-stat-val" data-count="48">0</span>ms<span class="hero-stat-lbl">Avg
+            Response</span></div>
+        <div class="hero-stat"><span class="hero-stat-val" data-count="2.4">0</span>B+<span class="hero-stat-lbl">Txns
+            Protected</span></div>
+        <div class="hero-stat"><span class="hero-stat-val" data-count="0.003">0</span>%<span class="hero-stat-lbl">False
+            Positive Rate</span></div>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <div class="scroll-bar"></div>SCROLL
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <div id="db-section">
+    <div class="db-wrap">
+      <div class="db-header">
+        <div>
+          <div class="s-tag">// LIVE INTELLIGENCE CENTER</div>
+          <div class="s-title" style="font-size:22px;margin-bottom:0;">Transaction Monitoring</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);" id="txnCounter">
+            ANALYZED: 0</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--neon-green);" id="tpsDisplay">0
+            TPS</div>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row" style="margin-bottom:18px;">
+        <div class="glass stat-card reveal">
+          <div class="stat-val" id="s-total">0</div>
+          <div class="stat-lbl">TOTAL ANALYZED</div>
+          <div class="stat-delta" style="color:var(--neon-cyan);">+<span id="d-total">0</span>/min</div>
+        </div>
+        <div class="glass stat-card reveal" style="transition-delay:.08s;">
+          <div class="stat-val" style="color:var(--neon-green);" id="s-safe">0</div>
+          <div class="stat-lbl">SAFE</div>
+          <div class="stat-delta" style="color:var(--neon-green);" id="s-safe-pct">0%</div>
+        </div>
+        <div class="glass stat-card reveal" style="transition-delay:.16s;">
+          <div class="stat-val" style="color:var(--neon-yellow);" id="s-susp">0</div>
+          <div class="stat-lbl">SUSPICIOUS</div>
+          <div class="stat-delta" style="color:var(--neon-yellow);" id="s-susp-pct">0%</div>
+        </div>
+        <div class="glass stat-card reveal" style="transition-delay:.24s;">
+          <div class="stat-val" style="color:var(--neon-red);" id="s-fraud">0</div>
+          <div class="stat-lbl">BLOCKED</div>
+          <div class="stat-delta" style="color:var(--neon-red);" id="s-fraud-pct">0%</div>
+        </div>
+      </div>
+
+      <div class="db-grid">
+        <!-- Feed -->
+        <div class="glass feed-card reveal">
+          <div class="feed-hdr">
+            <div class="feed-title">LIVE FEED</div>
+            <div
+              style="display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--neon-green);">
+              <span class="live-dot" style="width:5px;height:5px;"></span>STREAMING
+            </div>
+          </div>
+          <div class="txn-list" id="txnList"></div>
+        </div>
+
+        <!-- Centre -->
+        <div class="centre">
+          <!-- Gauge -->
+          <div class="glass gauge-card reveal">
+            <div class="gauge-inner">
+              <div>
+                <div class="gauge-wrap">
+                  <svg class="gauge-svg" viewBox="0 0 190 105">
+                    <path class="gauge-track" d="M 18 96 A 76 76 0 0 1 172 96" />
+                    <path class="gauge-fill" id="gFill" d="M 18 96 A 76 76 0 0 1 172 96" stroke-dasharray="239"
+                      stroke-dashoffset="239" stroke="var(--neon-green)" />
+                  </svg>
+                  <div class="gauge-num" id="gScore">0</div>
+                </div>
+                <div class="gauge-lbl">FRAUD RISK SCORE</div>
+                <div class="gauge-status" id="gStatus" style="color:var(--neon-green);">● SYSTEM SAFE</div>
+              </div>
+              <div class="txn-detail-box">
+                <div class="detail-label">SELECTED TRANSACTION</div>
+                <div id="detailRows">
+                  <div class="detail-row"><span class="detail-key">ID</span><span class="detail-val" id="d-id">——</span>
+                  </div>
+                  <div class="detail-row"><span class="detail-key">UPI</span><span class="detail-val"
+                      id="d-upi">——</span></div>
+                  <div class="detail-row"><span class="detail-key">Amount</span><span class="detail-val"
+                      id="d-amt">——</span></div>
+                  <div class="detail-row"><span class="detail-key">Location</span><span class="detail-val"
+                      id="d-loc">——</span></div>
+                  <div class="detail-row"><span class="detail-key">Device</span><span class="detail-val"
+                      id="d-dev">——</span></div>
+                  <div class="detail-row"><span class="detail-key">Velocity</span><span class="detail-val"
+                      id="d-vel">——</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Network Graph -->
+          <div class="glass graph-card reveal">
+            <div class="graph-hdr">
+              <div class="graph-title">3D FRAUD NETWORK GRAPH</div>
+              <div class="graph-hint">Drag · Zoom · Hover nodes</div>
+            </div>
+            <canvas id="net-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Right col -->
+        <div class="right-col">
+          <!-- Explain -->
+          <div class="glass explain-card reveal">
+            <div class="explain-title">🧠 AI EXPLANATION ENGINE</div>
+            <div id="explainItems"
+              style="font-size:12px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;padding:12px 0;">Click
+              a transaction to analyze...</div>
+          </div>
+
+          <!-- AI Decision log (replaces manual block/allow card) -->
+          <div class="glass" id="aiDecisionLog" style="padding:14px 18px;min-height:60px;">
+            <div
+              style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;color:var(--neon-cyan);margin-bottom:8px">
+              🤖 AI DECISION LOG</div>
+            <div id="aiDecisionBody"
+              style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-secondary);">Awaiting
+              transactions...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="analytics-section" style="background:rgba(2,6,14,.85);padding:60px 0;">
+    <div class="section-wrap">
+      <div class="s-tag">// INTELLIGENCE ANALYTICS</div>
+      <h2 class="s-title">Fraud Intelligence Dashboard</h2>
+      <p class="s-desc">Real-time analytics powered by adaptive ML models trained on 2.4B+ UPI transactions.</p>
+
+      <div class="metric-row">
+        <div class="glass metric-card reveal">
+          <div class="metric-val" style="color:var(--neon-green);">99.7%</div>
+          <div class="metric-lbl">MODEL ACCURACY</div>
+          <div class="metric-trend" style="color:var(--neon-green);">↑ +0.2% this week</div>
+        </div>
+        <div class="glass metric-card reveal" style="transition-delay:.08s;">
+          <div class="metric-val" style="color:var(--neon-cyan);">48ms</div>
+          <div class="metric-lbl">AVG LATENCY</div>
+          <div class="metric-trend" style="color:var(--neon-green);">↓ -3ms improvement</div>
+        </div>
+        <div class="glass metric-card reveal" style="transition-delay:.16s;">
+          <div class="metric-val" style="color:var(--neon-yellow);">0.003%</div>
+          <div class="metric-lbl">FALSE POSITIVE</div>
+          <div class="metric-trend" style="color:var(--neon-green);">↓ -0.001% this week</div>
+        </div>
+        <div class="glass metric-card reveal" style="transition-delay:.24s;">
+          <div class="metric-val" style="color:var(--neon-red);" id="a-blocked">0</div>
+          <div class="metric-lbl">BLOCKED TODAY</div>
+          <div class="metric-trend" style="color:var(--neon-red);" id="a-saved">₹0 saved</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="glass chart-card reveal">
+          <div class="chart-title">FRAUD TRENDS (24H)</div>
+          <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="glass chart-card reveal" style="transition-delay:.1s;">
+          <div class="chart-title">RISK DISTRIBUTION</div>
+          <div class="chart-wrap"><canvas id="distChart"></canvas></div>
+        </div>
+        <div class="glass chart-card reveal" style="transition-delay:.2s;">
+          <div class="chart-title">DETECTION ACCURACY (7D)</div>
+          <div class="chart-wrap"><canvas id="accChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CASE QUEUE -->
+  <div id="cases-section" style="padding:60px 0;">
+    <div class="section-wrap">
+      <div class="s-tag">// ANALYST WORKFLOW</div>
+      <h2 class="s-title">Case Management Queue</h2>
+      <p class="s-desc">All transactions processed by the AI. Click any blocked entry to see exactly why it was flagged.
+      </p>
+      <div class="tab-bar" style="margin-top:28px;">
+        <button class="tab active" onclick="switchTab('all',this)">ALL CASES</button>
+        <button class="tab" onclick="switchTab('blocked',this)">BLOCKED</button>
+        <button class="tab" onclick="switchTab('approved',this)">APPROVED</button>
+      </div>
+      <div class="tab-panel active" id="tab-all">
+        <div class="case-list" id="caseList"></div>
+      </div>
+      <div class="tab-panel" id="tab-blocked">
+        <div class="case-list" id="caseListBlocked"></div>
+      </div>
+      <div class="tab-panel" id="tab-approved">
+        <div class="case-list" id="caseListApproved"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOCKED REASON MODAL -->
+  <div class="why-modal-bg" id="whyModal">
+    <div class="why-modal">
+      <div class="why-modal-hdr">
+        <div>
+          <div
+            style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--neon-red);text-transform:uppercase;margin-bottom:6px">
+            Blocked Transaction</div>
+          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--neon-red)" id="whyModalId">TXN-XXXX
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px" id="whyModalMeta"></div>
+        </div>
+        <button class="why-modal-close" onclick="closeWhyModal()">✕ Close</button>
+      </div>
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--neon-red);margin-bottom:12px">Why Was This
+        Transaction Blocked?</div>
+      <div id="whyModalSignals"></div>
+      <div
+        style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-dim);margin:16px 0 10px;text-transform:uppercase">
+        Transaction Details</div>
+      <div id="whyModalDetails" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- WHY APPROVED MODAL -->
+  <div class="why-modal-bg" id="approvedModal">
+    <div class="why-modal" style="border-color:rgba(0,255,136,.28);">
+      <div class="why-modal-hdr">
+        <div>
+          <div
+            style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--neon-green);text-transform:uppercase;margin-bottom:6px">
+            ✅ AI Approved Transaction</div>
+          <div style="font-family:'Orbitron',monospace;font-size:18px;color:var(--neon-green)" id="approvedModalId">
+            TXN-XXXX</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:4px" id="approvedModalMeta"></div>
+        </div>
+        <button class="why-modal-close" onclick="closeApprovedModal()">✕ Close</button>
+      </div>
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--neon-green);margin-bottom:12px">Why Was
+        This Transaction Approved?</div>
+      <div id="approvedModalSignals"></div>
+      <div
+        style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--text-dim);margin:16px 0 10px;text-transform:uppercase">
+        Transaction Details</div>
+      <div id="approvedModalDetails" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- AGENT -->
+  <div id="agent-section" style="padding:0 0 100px;">
+    <div class="section-wrap">
+      <div class="s-tag">// CONVERSATIONAL AI</div>
+      <h2 class="s-title">AI Security Agent</h2>
+      <p class="s-desc">Ask the AI agent about any flagged transaction, fraud patterns, or system status.</p>
+      <div class="agent-wrap">
+        <div class="glass agent-box">
+          <div class="agent-quick">
+            <button class="quick-btn" onclick="qSend('Why was the last transaction blocked?')">Why was this
+              blocked?</button>
+            <button class="quick-btn" onclick="qSend('What are common UPI fraud patterns in India?')">Common UPI
+              frauds</button>
+            <button class="quick-btn" onclick="qSend('How accurate is the ML model?')">Model accuracy</button>
+            <button class="quick-btn" onclick="qSend('Show me the highest risk accounts')">High-risk accounts</button>
+            <button class="quick-btn" onclick="qSend('What is the current attack status?')">Attack status</button>
+          </div>
+          <div class="agent-msgs" id="agentMsgs"></div>
+          <div class="agent-input-row">
+            <input class="agent-input" id="agentInput" placeholder="Ask about any transaction or fraud pattern..."
+              onkeydown="if(event.key==='Enter')sendAgent()" />
+            <button class="agent-send" onclick="sendAgent()">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="foot-logo">UPI SHIELD</div>
+    <div>AI Fraud Detection System · Real-Time Protection · Built for India's Digital Payment Infrastructure</div>
+    <div style="margin-top:6px;color:rgba(0,245,255,.3);">Protecting Google Pay · PhonePe · Paytm · BHIM · All UPI Apps
+    </div>
+  </footer>
+
+  <!-- Simulate bar -->
+  <div class="sim-bar">
+    <span class="sim-lbl">SIMULATION ENGINE</span>
+    <button class="btn-sim" onclick="toggleAttack()" id="simBtn">⚡ SIMULATE ATTACK</button>
+    <span class="sim-lbl" id="simStatus">IDLE</span>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+
+</html>
